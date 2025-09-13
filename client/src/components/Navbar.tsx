@@ -1,15 +1,22 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Moon, Sun, Globe, Menu, X } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import ProfileDropdown from "./ProfileDropdown";
+import AuthDialog from "./AuthDialog";
 
 interface NavbarProps {
   onThemeToggle: () => void;
   isDark: boolean;
+  onNavigate?: (section: string) => void;
 }
 
-export default function Navbar({ onThemeToggle, isDark }: NavbarProps) {
+export default function Navbar({ onThemeToggle, isDark, onNavigate }: NavbarProps) {
+  const { isAuthenticated } = useAuth();
   const [language, setLanguage] = useState("EN");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [authDialogOpen, setAuthDialogOpen] = useState(false);
+  const [authDialogTab, setAuthDialogTab] = useState<"signin" | "signup">("signin");
 
   const navItems = [
     { name: "Home", href: "#", active: true },
@@ -22,6 +29,22 @@ export default function Navbar({ onThemeToggle, isDark }: NavbarProps) {
   const toggleLanguage = () => {
     setLanguage(language === "EN" ? "हि" : "EN");
     console.log(`Language switched to: ${language === "EN" ? "Hindi" : "English"}`);
+  };
+
+  const handleSignInClick = () => {
+    setAuthDialogTab("signin");
+    setAuthDialogOpen(true);
+  };
+
+  const handleSignUpClick = () => {
+    setAuthDialogTab("signup");
+    setAuthDialogOpen(true);
+  };
+
+  const handleNavigate = (section: string) => {
+    if (onNavigate) {
+      onNavigate(section);
+    }
   };
 
   return (
@@ -79,12 +102,27 @@ export default function Navbar({ onThemeToggle, isDark }: NavbarProps) {
               )}
             </Button>
 
-            <Button variant="outline" size="sm" data-testid="button-sign-in">
-              Sign In
-            </Button>
-            <Button size="sm" data-testid="button-sign-up">
-              Sign Up
-            </Button>
+            {isAuthenticated ? (
+              <ProfileDropdown onNavigate={handleNavigate} />
+            ) : (
+              <>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleSignInClick}
+                  data-testid="button-sign-in"
+                >
+                  Sign In
+                </Button>
+                <Button 
+                  size="sm" 
+                  onClick={handleSignUpClick}
+                  data-testid="button-sign-up"
+                >
+                  Sign Up
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -147,19 +185,37 @@ export default function Navbar({ onThemeToggle, isDark }: NavbarProps) {
                   </Button>
                 </div>
 
-                <div className="flex items-center space-x-2">
-                  <Button variant="outline" size="sm">
-                    Sign In
-                  </Button>
-                  <Button size="sm">
-                    Sign Up
-                  </Button>
-                </div>
+                {isAuthenticated ? (
+                  <ProfileDropdown onNavigate={handleNavigate} />
+                ) : (
+                  <div className="flex items-center space-x-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={handleSignInClick}
+                    >
+                      Sign In
+                    </Button>
+                    <Button 
+                      size="sm"
+                      onClick={handleSignUpClick}
+                    >
+                      Sign Up
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         )}
       </div>
+
+      {/* Auth Dialog */}
+      <AuthDialog
+        open={authDialogOpen}
+        onOpenChange={setAuthDialogOpen}
+        defaultTab={authDialogTab}
+      />
     </nav>
   );
 }

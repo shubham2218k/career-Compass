@@ -6,17 +6,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAuthDialog } from "@/contexts/AuthDialogContext";
 import { Loader2 } from "lucide-react";
 
-interface AuthDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  defaultTab?: "signin" | "signup";
-}
-
-export default function AuthDialog({ open, onOpenChange, defaultTab = "signin" }: AuthDialogProps) {
+export default function AuthDialog() {
   const { login, register } = useAuth();
-  const [activeTab, setActiveTab] = useState(defaultTab);
+  const { isOpen, activeTab, closeDialog, setActiveTab } = useAuthDialog();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -42,7 +37,7 @@ export default function AuthDialog({ open, onOpenChange, defaultTab = "signin" }
     try {
       const success = await login(signInData.username, signInData.password);
       if (success) {
-        onOpenChange(false);
+        closeDialog();
         // Reset form
         setSignInData({ username: "", password: "" });
       } else {
@@ -75,7 +70,7 @@ export default function AuthDialog({ open, onOpenChange, defaultTab = "signin" }
     try {
       const success = await register(signUpData.username, signUpData.email, signUpData.password);
       if (success) {
-        onOpenChange(false);
+        closeDialog();
         // Reset form
         setSignUpData({ username: "", email: "", password: "", confirmPassword: "" });
       } else {
@@ -89,7 +84,7 @@ export default function AuthDialog({ open, onOpenChange, defaultTab = "signin" }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={closeDialog}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-center font-heading text-2xl">

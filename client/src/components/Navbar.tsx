@@ -2,8 +2,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Moon, Sun, Globe, Menu, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAuthDialog } from "@/contexts/AuthDialogContext";
 import ProfileDropdown from "./ProfileDropdown";
-import AuthDialog from "./AuthDialog";
 
 interface NavbarProps {
   onThemeToggle: () => void;
@@ -13,10 +13,9 @@ interface NavbarProps {
 
 export default function Navbar({ onThemeToggle, isDark, onNavigate }: NavbarProps) {
   const { isAuthenticated } = useAuth();
+  const { openDialog } = useAuthDialog();
   const [language, setLanguage] = useState("EN");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [authDialogOpen, setAuthDialogOpen] = useState(false);
-  const [authDialogTab, setAuthDialogTab] = useState<"signin" | "signup">("signin");
 
   const navItems = [
     { name: "Home", href: "#", active: true },
@@ -32,13 +31,11 @@ export default function Navbar({ onThemeToggle, isDark, onNavigate }: NavbarProp
   };
 
   const handleSignInClick = () => {
-    setAuthDialogTab("signin");
-    setAuthDialogOpen(true);
+    openDialog("signin");
   };
 
   const handleSignUpClick = () => {
-    setAuthDialogTab("signup");
-    setAuthDialogOpen(true);
+    openDialog("signup");
   };
 
   const handleNavigate = (section: string) => {
@@ -210,12 +207,6 @@ export default function Navbar({ onThemeToggle, isDark, onNavigate }: NavbarProp
         )}
       </div>
 
-      {/* Auth Dialog */}
-      <AuthDialog
-        open={authDialogOpen}
-        onOpenChange={setAuthDialogOpen}
-        defaultTab={authDialogTab}
-      />
     </nav>
   );
 }

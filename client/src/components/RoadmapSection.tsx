@@ -1,6 +1,9 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
+import { useLocation } from "wouter";
+import { useAuth } from "@/contexts/AuthContext";
+import { useAuthDialog } from "@/contexts/AuthDialogContext";
 import { 
   Search, 
   Target, 
@@ -97,6 +100,9 @@ const roadmapSteps: RoadmapStep[] = [
 ];
 
 export default function RoadmapSection() {
+  const { isAuthenticated } = useAuth();
+  const { openDialog } = useAuthDialog();
+  const [, setLocation] = useLocation();
   const [visibleSteps, setVisibleSteps] = useState(new Set<number>());
 
   useEffect(() => {
@@ -121,8 +127,13 @@ export default function RoadmapSection() {
   }, []);
 
   const handleStartJourney = () => {
-    console.log("Start Your Journey Now clicked - redirecting to sign up/sign in");
-    // This would redirect to authentication in a real app
+    if (isAuthenticated) {
+      // If user is authenticated, start the Discovery process
+      setLocation("/discovery");
+    } else {
+      // If not authenticated, open the auth dialog with signup tab
+      openDialog("signup");
+    }
   };
 
   return (

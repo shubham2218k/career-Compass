@@ -1,0 +1,118 @@
+Design and code a modern, engaging, and responsive Home Page UI for a Career Guidance Platform targeting students after 10th, 12th, graduates, and non-graduates.
+
+🔹 Sections & Layout
+
+Navbar (Top)
+
+Left: Logo / Brand Name
+
+Center: Navigation links → Home, About, Library (courses/books), AI Chat, Roadmap
+
+Right: Sign Up / Sign In buttons
+
+Features:
+
+Language Switcher 🌐 (Hindi/English support)
+
+Theme Toggle (Light/Dark/System)
+
+Highlight the active page (bold/underlined).
+
+Keep minimal, remove blog or irrelevant items.
+
+Hero Section (Top Banner)
+
+Bold headline: “Ignite Your Potential.”
+
+Subheading: Motivational text → “Your academic journey is unique. Our platform provides the guidance, tools, and resources to help you succeed, one step at a time.”
+
+Quote inside hero (small, elegant):
+“Arise, awake, and stop not till the goal is reached.” — Swami Vivekananda
+
+Two CTA buttons: Get Started (primary, gradient/blue) + Learn More (secondary).
+
+Right side: Placeholder/illustration or animation (engaging, modern).
+
+Demo Video Section
+
+Centered video player placeholder with short heading → “See How It Works in 60 Seconds.”
+
+Roadmap Section (Improved Design)
+
+Vertical or horizontal timeline/stepper with smooth animations.
+
+Each step = number, icon, title, and description inside card-style boxes.
+
+Example steps:
+
+Start → Sign up & create profile (goals, interests, academic level).
+
+Explore → Browse personalized courses, tools, and guidance.
+
+Learn → Use resources, AI chat, and practice materials.
+
+Achieve → Track progress, milestones, and career readiness.
+
+Fix: Use proper color contrast (dark mode text must not disappear). Cards should have shadow, rounded corners, and hover effect.
+
+Testimonials (Future Section)
+
+Placeholder area → “Students love this!” with ratings/reviews.
+
+For now, show “Coming Soon – Student Stories.”
+
+Footer Section
+
+Links: About, Contact, Privacy Policy, Terms
+
+Social media icons (minimal)
+
+Dark background, light text
+
+🔹 Theme & Colors
+
+Dark Mode Palette:
+
+Background: #0F172A
+
+Road line: #475569
+
+Milestone cards: #1E293B with shadow
+
+Headings: #F1F5F9
+
+Text: #CBD5E1
+
+Accent (icons/numbers): #6366F1
+
+Light Mode Palette:
+
+Background: #F8FAFC
+
+Road line: #CBD5E1
+
+Milestone cards: #FFFFFF with shadow
+
+Headings: #0F172A
+
+Text: #334155
+
+Accent (icons/numbers): #2563EB
+
+Rules:
+
+Use Tailwind dark: classes or CSS variables for theme toggle.
+
+Ensure all text is readable (no disappearing in light mode).
+
+Use soft shadows & smooth hover effects.
+
+Avoid pure black/white → stick to soft shades for a professional look.
+
+🔹 Style & Animation
+
+Smooth scroll animations (fade/slide).
+
+Responsive for mobile, tablet, and desktop.
+
+CTA button at the bottom of Roadmap: “Begin Your Journey” (bold, attractive)

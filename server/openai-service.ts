@@ -1,0 +1,184 @@
+import OpenAI from "openai";
+import { User, ChatMessage } from "@shared/schema";
+
+// the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+export interface ChatContext {
+  currentPage?: string;
+  userProfile?: any;
+  previousMessages?: ChatMessage[];
+}
+
+export class OpenAIService {
+  
+  async generateChatResponse(
+    message: string, 
+    user: User, 
+    context: ChatContext = {}
+  ): Promise<string> {
+    try {
+      const systemPrompt = this.buildSystemPrompt(user, context);
+      const userMessage = this.buildUserMessage(message, context);
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...this.buildConversationHistory(context.previousMessages || []),
+          { role: "user", content: userMessage }
+        ],
+        max_tokens: 800,
+        temperature: 0.7,
+      });
+
+      return response.choices[0].message.content || "I apologize, but I couldn't generate a response. Please try again.";
+    } catch (error) {
+      console.error('OpenAI API error:', error);
+      throw new Error('Failed to generate AI response');
+    }
+  }
+
+  async analyzeUploadedImage(base64Image: string, userQuery?: string): Promise<string> {
+    try {
+      const analysisPrompt = userQuery || "Analyze this image in detail. If it's a resume, provide career advice. If it's a chart or graph, explain the data insights. If it's any other document, provide relevant guidance for career development.";
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: analysisPrompt
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: `data:image/jpeg;base64,${base64Image}`
+                }
+              }
+            ],
+          },
+        ],
+        max_tokens: 500,
+      });
+
+      return response.choices[0].message.content || "I couldn't analyze this image. Please try uploading a different image.";
+    } catch (error) {
+      console.error('Image analysis error:', error);
+      throw new Error('Failed to analyze image');
+    }
+  }
+
+  async moderateContent(content: string): Promise<{ flagged: boolean; reason?: string }> {
+    try {
+      const moderation = await openai.moderations.create({
+        input: content,
+      });
+
+      const result = moderation.results[0];
+      if (result.flagged) {
+        const flaggedCategories = Object.entries(result.categories)
+          .filter(([_, flagged]) => flagged)
+          .map(([category, _]) => category);
+        
+        return {
+          flagged: true,
+          reason: `Content flagged for: ${flaggedCategories.join(', ')}`
+        };
+      }
+
+      return { flagged: false };
+    } catch (error) {
+      console.error('Content moderation error:', error);
+      // If moderation fails, allow content but log the error
+      return { flagged: false };
+    }
+  }
+
+  private buildSystemPrompt(user: User, context: ChatContext): string {
+    const basePrompt = `You are an AI career mentor for a career guidance platform called CareerPath. You help users with career planning, skill development, and educational guidance specifically for the Indian job market.
+
+Your personality:
+- Friendly yet professional, like a knowledgeable mentor
+- Supportive and encouraging
+- Practical and actionable in your advice
+- Culturally aware of Indian education system and job market
+
+Your capabilities:
+1. Career Guidance: Provide personalized career advice based on user's background, interests, and goals
+2. App Navigation: Help users understand and use different features of the CareerPath platform
+3. Skill Development: Suggest learning paths, courses, and skill-building activities
+4. Job Market Insights: Share current trends, salary ranges, and opportunities in India
+5. Educational Guidance: Advise on educational pathways after 10th, 12th, or graduation
+
+Context about the user:
+- Username: ${user.username}
+- Current monthly prompts used: ${user.monthlyPromptCount}/100`;
+
+    if (context.currentPage) {
+      basePrompt += `\n- User is currently on: ${context.currentPage} page`;
+    }
+
+    if (context.userProfile) {
+      basePrompt += `\n- User profile data available: ${JSON.stringify(context.userProfile)}`;
+    }
+
+    return basePrompt + `
+
+Guidelines:
+- Keep responses concise but helpful (aim for 2-3 paragraphs)
+- Use simple, everyday language
+- Provide specific, actionable advice
+- Include relevant Indian context (companies, education system, etc.)
+- When discussing salaries, use Indian Rupees (₹) and LPA format
+- If asked about app features, guide them to relevant sections
+- For inappropriate content, politely redirect to career-related topics
+- Always be encouraging and focus on growth mindset`;
+  }
+
+  private buildUserMessage(message: string, context: ChatContext): string {
+    let userMessage = message;
+
+    if (context.currentPage) {
+      userMessage = `[User is on ${context.currentPage} page] ${message}`;
+    }
+
+    return userMessage;
+  }
+
+  private buildConversationHistory(messages: ChatMessage[]): Array<{role: "user" | "assistant", content: string}> {
+    // Include last 6 messages for context (3 exchanges)
+    const recentMessages = messages.slice(-6);
+    
+    return recentMessages.map(msg => ({
+      role: msg.role as "user" | "assistant",
+      content: msg.content
+    }));
+  }
+
+  async generateQuickActions(userContext: any): Promise<string[]> {
+    const baseActions = [
+      "Suggest careers for me",
+      "Find relevant courses",
+      "Analyze my strengths",
+      "Show job market trends",
+      "Create a learning plan"
+    ];
+
+    // Add context-specific actions based on user's current page or profile
+    if (userContext?.currentPage === 'discovery') {
+      baseActions.unshift("Help me complete my profile");
+    }
+
+    if (userContext?.currentPage === 'recommendations') {
+      baseActions.unshift("Explain these recommendations");
+    }
+
+    return baseActions.slice(0, 5); // Return top 5 actions
+  }
+}
+
+export const openaiService = new OpenAIService();

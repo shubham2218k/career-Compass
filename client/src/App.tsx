@@ -10,6 +10,7 @@ import AuthDialog from "@/components/AuthDialog";
 import Home from "@/pages/Home";
 import Discovery from "@/pages/Discovery";
 import Recommendations from "@/pages/Recommendations";
+import AIChat from "@/pages/AIChat";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -18,6 +19,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/discovery" component={Discovery} />
       <Route path="/recommendations" component={Recommendations} />
+      <Route path="/ai-chat" component={AIChat} />
       <Route component={NotFound} />
     </Switch>
   );

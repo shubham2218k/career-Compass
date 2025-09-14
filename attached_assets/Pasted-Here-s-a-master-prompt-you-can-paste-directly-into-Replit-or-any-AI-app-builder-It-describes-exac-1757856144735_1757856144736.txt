@@ -1,0 +1,65 @@
+Here’s a master prompt you can paste directly into Replit (or any AI app builder). It describes exactly what should happen in the Goal Setting section, without dictating the UI (so the tool can design it automatically):
+
+🚀 Master Prompt – Goal Setting Section
+
+Instruction for AI App Builder:
+You are building the Goal Setting section of a career guidance app. The goal of this section is to analyze user data (from Discovery part) and provide personalized career advice. Do not force decisions, and keep the flow interactive and engaging.
+
+🔹 Core Functionality:
+
+Input Data Source:
+
+Use details from the Discovery section (user’s interests, education, skills, strengths, past experiences).
+
+Personalized Career Suggestions:
+
+Suggest the top 2–3 career fields that best match the user profile.
+
+Each suggestion must include:
+
+Career name (e.g., Data Science, Cybersecurity, UX Design).
+
+A short explanation of why it fits the user.
+
+A brief tagline or highlight about the field.
+
+Expandable Career Insights:
+For each suggested career, provide additional insights (shown only when the user clicks or expands):
+
+📈 Future Scope & Trends (growth, demand, relevance).
+
+🛠️ Work Areas / Subfields (roles inside the field).
+
+💰 Salary Structure (entry-level, mid-level, expert range).
+
+🛡️ Job Security & Market Demand (stability/competition).
+
+🎯 Why it Matches the User (AI-personalized reasoning).
+
+Comparison Feature (Optional):
+
+Allow user to compare 2 career options side by side (scope, salary, security).
+
+User Selection & Goal Setting:
+
+Once the user selects a career goal, show a confirmation screen:
+
+Congratulate them.
+
+Restate their chosen career field.
+
+Add a motivational message.
+
+Provide a button to proceed to Skill Assessment section.
+
+🔹 Rules & Experience Guidelines:
+
+Keep tone friendly, conversational, and mentor-like.
+
+Provide information in short, modular blocks (not long paragraphs).
+
+Ensure user feels guided, not forced → make it clear they can change later.
+
+Avoid making the section boring → use engaging descriptions and concise insights.
+
+⚡ With this, Replit (or similar AI tool) will understand exactly what logic and features to build in the Goal Setting section, while generating UI on its own.

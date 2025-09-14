@@ -4,6 +4,7 @@ import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
 import QuoteSection from "@/components/QuoteSection";
 import RoadmapSection from "@/components/RoadmapSection";
+import FAQSection from "@/components/FAQSection";
 import Footer from "@/components/Footer";
 import { useTheme } from "@/components/ThemeProvider";
 import { useAuth } from "@/contexts/AuthContext";
@@ -71,6 +72,8 @@ export default function Home() {
         <QuoteSection />
         
         <RoadmapSection />
+        
+        <FAQSection />
       </main>
       
       <Footer />

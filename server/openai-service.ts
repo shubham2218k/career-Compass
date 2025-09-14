@@ -46,7 +46,7 @@ export class OpenAIService {
       const analysisPrompt = userQuery || "Analyze this image in detail. If it's a resume, provide career advice. If it's a chart or graph, explain the data insights. If it's any other document, provide relevant guidance for career development.";
 
       const response = await openai.chat.completions.create({
-        model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025
+        model: "gpt-4o", // Use gpt-4o for image analysis as it supports vision
         messages: [
           {
             role: "user",
@@ -77,6 +77,7 @@ export class OpenAIService {
   async moderateContent(content: string): Promise<{ flagged: boolean; reason?: string }> {
     try {
       const moderation = await openai.moderations.create({
+        model: "omni-moderation-latest",
         input: content,
       });
 

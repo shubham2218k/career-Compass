@@ -46,7 +46,7 @@ export default function AIChat() {
   const [message, setMessage] = useState("");
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [isListening, setIsListening] = useState(false);
-  const [backgroundImage, setBackgroundImage] = useState("/assets/swami-vivekananda.jpg");
+  const [backgroundImage, setBackgroundImage] = useState("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGRlZnM+CjxsaW5lYXJHcmFkaWVudCBpZD0iZ3JhZGllbnQiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPgo8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjNDI0OGY0IiBzdG9wLW9wYWNpdHk9IjAuMSIvPgo8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiM5MzMzZWEiIHN0b3Atb3BhY2l0eT0iMC4wNSIvPgo8L2xpbmVhckdyYWRpZW50Pgo8L2RlZnM+CjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JhZGllbnQpIi8+Cjwvc3ZnPgo=");
   const [currentLanguage, setCurrentLanguage] = useState("en");
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [speechEnabled, setSpeechEnabled] = useState(true);
@@ -63,6 +63,10 @@ export default function AIChat() {
   // Fetch messages for current session
   const { data: messages = [], isLoading: messagesLoading } = useQuery<ChatMessage[]>({
     queryKey: ['/api/chat/messages', currentSessionId],
+    queryFn: async () => {
+      if (!currentSessionId) return [];
+      return apiRequest(`/api/chat/messages/${currentSessionId}`);
+    },
     enabled: !!currentSessionId,
   });
 
@@ -74,10 +78,15 @@ export default function AIChat() {
 
   // Send message mutation
   const sendMessageMutation = useMutation({
-    mutationFn: async ({ content, sessionId }: { content: string; sessionId?: string }) => {
+    mutationFn: async ({ content, sessionId, language, location }: { 
+      content: string; 
+      sessionId?: string; 
+      language?: string; 
+      location?: string; 
+    }) => {
       return apiRequest(`/api/chat/send`, {
         method: 'POST',
-        body: { content, sessionId }
+        body: { content, sessionId, language, location }
       });
     },
     onSuccess: (data) => {
@@ -87,12 +96,21 @@ export default function AIChat() {
         setCurrentSessionId(data.sessionId);
       }
     },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to send message. Please try again.",
-        variant: "destructive"
-      });
+    onError: (error: any) => {
+      // Handle prompt limit error specifically
+      if (error.status === 429) {
+        toast({
+          title: "Monthly Limit Reached",
+          description: "You've used all 100 prompts this month. Limit resets next month.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Error", 
+          description: "Failed to send message. Please try again.",
+          variant: "destructive"
+        });
+      }
     }
   });
 
@@ -125,8 +143,6 @@ export default function AIChat() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
-  const handleSendMessage = handleSendMessageWithSpeech;
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -239,7 +255,7 @@ export default function AIChat() {
   };
 
   // Enhanced message handling with auto-speech
-  const handleSendMessageWithSpeech = async () => {
+  const handleSendMessage = async () => {
     if (!message.trim() || sendMessageMutation.isPending) return;
     
     const messageToSend = message;
@@ -247,18 +263,22 @@ export default function AIChat() {
     
     sendMessageMutation.mutate({ 
       content: messageToSend, 
-      sessionId: currentSessionId || undefined 
+      sessionId: currentSessionId || undefined,
+      language: currentLanguage,
+      location: "India"
     }, {
-      onSuccess: () => {
+      onSuccess: (data) => {
         // Auto-speak the AI response if speech is enabled
         if (speechEnabled) {
-          setTimeout(() => {
-            const latestMessages = queryClient.getQueryData<ChatMessage[]>(['/api/chat/messages', currentSessionId]);
+          // Wait for messages to be refetched and get the latest AI response
+          setTimeout(async () => {
+            await queryClient.invalidateQueries({ queryKey: ['/api/chat/messages', data.sessionId || currentSessionId] });
+            const latestMessages = queryClient.getQueryData<ChatMessage[]>(['/api/chat/messages', data.sessionId || currentSessionId]);
             const lastAiMessage = latestMessages?.filter(m => m.role === 'assistant').pop();
             if (lastAiMessage) {
               speakText(lastAiMessage.content);
             }
-          }, 1000);
+          }, 1500);
         }
       }
     });
@@ -327,8 +347,12 @@ export default function AIChat() {
               </Button>
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span>Prompts used: {user.monthlyPromptCount}/100</span>
-              <Badge variant="secondary">{100 - user.monthlyPromptCount} left</Badge>
+              <span>Prompts used: {user?.monthlyPromptCount || 0}/100</span>
+              <Badge 
+                variant={(user?.monthlyPromptCount || 0) >= 90 ? "destructive" : "secondary"}
+              >
+                {100 - (user?.monthlyPromptCount || 0)} left
+              </Badge>
             </div>
           </div>
           
@@ -598,9 +622,14 @@ export default function AIChat() {
                 </Button>
               </div>
               
-              {user.monthlyPromptCount >= 100 && (
-                <div className="mt-2 text-sm text-yellow-600 bg-yellow-50 px-3 py-1 rounded">
-                  You've reached your monthly limit of 100 prompts. Limit resets next month.
+              {(user?.monthlyPromptCount || 0) >= 100 && (
+                <div className="mt-2 text-sm text-red-200 bg-red-900/30 px-3 py-1 rounded border border-red-500/20">
+                  ⚠️ Monthly limit reached (100/100). Resets next month.
+                </div>
+              )}
+              {(user?.monthlyPromptCount || 0) >= 90 && (user?.monthlyPromptCount || 0) < 100 && (
+                <div className="mt-2 text-sm text-yellow-200 bg-yellow-900/30 px-3 py-1 rounded border border-yellow-500/20">
+                  ⚠️ Almost at limit: {user?.monthlyPromptCount}/100 prompts used
                 </div>
               )}
             </div>

@@ -8,6 +8,8 @@ export interface ChatContext {
   currentPage?: string;
   userProfile?: any;
   previousMessages?: ChatMessage[];
+  language?: string;
+  location?: string;
 }
 
 export class OpenAIService {
@@ -99,6 +101,8 @@ export class OpenAIService {
   }
 
   private buildSystemPrompt(user: User, context: ChatContext): string {
+    const languageInstructions = this.getLanguageInstructions(context.language);
+    
     const basePrompt = `You are an AI career mentor for a career guidance platform called CareerPath. You help users with career planning, skill development, and educational guidance specifically for the Indian job market.
 
 Your personality:
@@ -113,10 +117,13 @@ Your capabilities:
 3. Skill Development: Suggest learning paths, courses, and skill-building activities
 4. Job Market Insights: Share current trends, salary ranges, and opportunities in India
 5. Educational Guidance: Advise on educational pathways after 10th, 12th, or graduation
+6. Real-time Data: Access current market trends, industry demands, and emerging opportunities
+7. Multi-language Support: Communicate in the user's preferred language
 
 Context about the user:
 - Username: ${user.username}
-- Current monthly prompts used: ${user.monthlyPromptCount}/100`;
+- Current monthly prompts used: ${user.monthlyPromptCount}/100
+${languageInstructions}`;
 
     if (context.currentPage) {
       basePrompt += `\n- User is currently on: ${context.currentPage} page`;
@@ -136,7 +143,11 @@ Guidelines:
 - When discussing salaries, use Indian Rupees (₹) and LPA format
 - If asked about app features, guide them to relevant sections
 - For inappropriate content, politely redirect to career-related topics
-- Always be encouraging and focus on growth mindset`;
+- Always be encouraging and focus on growth mindset
+- Provide real-time market data when discussing trends or opportunities
+- Include current industry demands and emerging career paths
+- Mention specific companies, startups, and opportunities in India
+- Reference current educational institutions and certification programs`;
   }
 
   private buildUserMessage(message: string, context: ChatContext): string {
@@ -159,25 +170,76 @@ Guidelines:
     }));
   }
 
+  // Add language-specific instructions
+  private getLanguageInstructions(language?: string): string {
+    if (!language || language === 'en') return '';
+    
+    const languageMap: Record<string, string> = {
+      'hi': '- Respond in Hindi (हिंदी) when requested, maintaining professional tone',
+      'te': '- Respond in Telugu (తెలుగు) when requested, maintaining professional tone',
+      'ta': '- Respond in Tamil (தமிழ்) when requested, maintaining professional tone',
+      'ml': '- Respond in Malayalam (മലയാളം) when requested, maintaining professional tone',
+      'bn': '- Respond in Bengali (বাংলা) when requested, maintaining professional tone'
+    };
+    
+    return languageMap[language] ? `\n${languageMap[language]}` : '';
+  }
+
+  // Enhanced real-time data fetching capability
+  async fetchRealTimeCareerData(query: string): Promise<string> {
+    try {
+      // This would typically connect to job boards, industry APIs, etc.
+      // For now, we'll use AI to generate current market insights
+      const response = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [
+          {
+            role: "system",
+            content: "You are a real-time career data analyst. Provide current, accurate information about Indian job market trends, salary ranges, skill demands, and opportunities. Use specific companies, recent hiring trends, and current market data."
+          },
+          {
+            role: "user",
+            content: `Provide current market data and trends for: ${query}. Include salary ranges in INR/LPA, top hiring companies, required skills, and market outlook for 2024-2025.`
+          }
+        ],
+        max_tokens: 400,
+        temperature: 0.3,
+      });
+
+      return response.choices[0].message.content || "Unable to fetch real-time data at the moment.";
+    } catch (error) {
+      console.error('Real-time data fetch error:', error);
+      return "Real-time data is currently unavailable. Please try again later.";
+    }
+  }
+
   async generateQuickActions(userContext: any): Promise<string[]> {
-    const baseActions = [
+    const contextAwareActions = [
       "Suggest careers for me",
       "Find relevant courses",
-      "Analyze my strengths",
+      "Analyze my strengths", 
       "Show job market trends",
-      "Create a learning plan"
+      "Create a learning plan",
+      "Check salary ranges",
+      "Find internship opportunities",
+      "Networking tips for my field"
     ];
 
     // Add context-specific actions based on user's current page or profile
     if (userContext?.currentPage === 'discovery') {
-      baseActions.unshift("Help me complete my profile");
+      contextAwareActions.unshift("Help me complete my profile");
     }
 
     if (userContext?.currentPage === 'recommendations') {
-      baseActions.unshift("Explain these recommendations");
+      contextAwareActions.unshift("Explain these recommendations");
     }
 
-    return baseActions.slice(0, 5); // Return top 5 actions
+    if (userContext?.currentPage === 'ai-chat') {
+      contextAwareActions.push("Analyze uploaded document");
+      contextAwareActions.push("Get industry insights");
+    }
+
+    return contextAwareActions.slice(0, 8); // Return top 8 actions
   }
 }
 

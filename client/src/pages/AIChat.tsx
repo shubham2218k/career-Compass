@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -19,7 +20,16 @@ import {
   Sparkles,
   MessageSquare,
   Upload,
-  RefreshCw
+  RefreshCw,
+  Volume2,
+  VolumeX,
+  Globe,
+  TrendingUp,
+  BookOpen,
+  Users,
+  Target,
+  Brain,
+  BarChart3
 } from "lucide-react";
 import type { ChatMessage, ChatSession } from "@shared/schema";
 
@@ -37,8 +47,12 @@ export default function AIChat() {
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [isListening, setIsListening] = useState(false);
   const [backgroundImage, setBackgroundImage] = useState("/assets/swami-vivekananda.jpg");
+  const [currentLanguage, setCurrentLanguage] = useState("en");
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [speechEnabled, setSpeechEnabled] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const backgroundInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch chat sessions
   const { data: sessions = [] } = useQuery<ChatSession[]>({
@@ -112,17 +126,7 @@ export default function AIChat() {
     scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = async () => {
-    if (!message.trim() || sendMessageMutation.isPending) return;
-    
-    const messageToSend = message;
-    setMessage("");
-    
-    sendMessageMutation.mutate({ 
-      content: messageToSend, 
-      sessionId: currentSessionId || undefined 
-    });
-  };
+  const handleSendMessage = handleSendMessageWithSpeech;
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -148,6 +152,7 @@ export default function AIChat() {
     reader.readAsDataURL(file);
   };
 
+  // Enhanced voice recognition with multi-language support
   const startVoiceRecording = () => {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
       toast({
@@ -161,9 +166,11 @@ export default function AIChat() {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
     
+    const selectedLanguage = languageOptions.find(lang => lang.value === currentLanguage);
+    
     recognition.continuous = false;
     recognition.interimResults = false;
-    recognition.lang = 'en-US';
+    recognition.lang = selectedLanguage?.code || 'en-US';
 
     recognition.onstart = () => setIsListening(true);
     recognition.onend = () => setIsListening(false);
@@ -185,11 +192,98 @@ export default function AIChat() {
     recognition.start();
   };
 
+  // Text-to-speech functionality
+  const speakText = (text: string) => {
+    if (!speechEnabled || !('speechSynthesis' in window)) return;
+
+    // Stop any current speech
+    window.speechSynthesis.cancel();
+    
+    const utterance = new SpeechSynthesisUtterance(text);
+    const selectedLanguage = languageOptions.find(lang => lang.value === currentLanguage);
+    
+    // Set language for speech synthesis
+    utterance.lang = selectedLanguage?.code || 'en-US';
+    utterance.rate = 0.9;
+    utterance.pitch = 1.0;
+    utterance.volume = 0.8;
+
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+
+    setIsSpeaking(true);
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const stopSpeaking = () => {
+    window.speechSynthesis.cancel();
+    setIsSpeaking(false);
+  };
+
+  // Handle background image change
+  const handleBackgroundChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const imageUrl = event.target?.result as string;
+      setBackgroundImage(imageUrl);
+      toast({
+        title: "Background updated",
+        description: "Your chat background has been changed successfully!",
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Enhanced message handling with auto-speech
+  const handleSendMessageWithSpeech = async () => {
+    if (!message.trim() || sendMessageMutation.isPending) return;
+    
+    const messageToSend = message;
+    setMessage("");
+    
+    sendMessageMutation.mutate({ 
+      content: messageToSend, 
+      sessionId: currentSessionId || undefined 
+    }, {
+      onSuccess: () => {
+        // Auto-speak the AI response if speech is enabled
+        if (speechEnabled) {
+          setTimeout(() => {
+            const latestMessages = queryClient.getQueryData<ChatMessage[]>(['/api/chat/messages', currentSessionId]);
+            const lastAiMessage = latestMessages?.filter(m => m.role === 'assistant').pop();
+            if (lastAiMessage) {
+              speakText(lastAiMessage.content);
+            }
+          }, 1000);
+        }
+      }
+    });
+  };
+
+  // Enhanced quick actions with more comprehensive options
   const defaultQuickActions: QuickAction[] = [
     { id: "careers", label: "Suggest careers for me", icon: <Sparkles className="w-4 h-4" /> },
-    { id: "courses", label: "Find relevant courses", icon: <MessageSquare className="w-4 h-4" /> },
     { id: "resume", label: "Analyze my resume", icon: <Upload className="w-4 h-4" /> },
-    { id: "trends", label: "Show job market trends", icon: <RefreshCw className="w-4 h-4" /> },
+    { id: "trends", label: "Show job market trends", icon: <TrendingUp className="w-4 h-4" /> },
+    { id: "courses", label: "Find relevant courses", icon: <BookOpen className="w-4 h-4" /> },
+    { id: "skills", label: "Assess my skills", icon: <Brain className="w-4 h-4" /> },
+    { id: "salary", label: "Check salary ranges", icon: <BarChart3 className="w-4 h-4" /> },
+    { id: "roadmap", label: "Create learning roadmap", icon: <Target className="w-4 h-4" /> },
+    { id: "networking", label: "Networking tips", icon: <Users className="w-4 h-4" /> },
+  ];
+
+  // Language options for multi-language support
+  const languageOptions = [
+    { value: "en", label: "English", code: "en-US" },
+    { value: "hi", label: "हिंदी", code: "hi-IN" },
+    { value: "te", label: "తెలుగు", code: "te-IN" },
+    { value: "ta", label: "தமிழ்", code: "ta-IN" },
+    { value: "ml", label: "മലയാളം", code: "ml-IN" },
+    { value: "bn", label: "বাংলা", code: "bn-IN" },
   ];
 
   if (!user) {
@@ -257,12 +351,53 @@ export default function AIChat() {
             ))}
           </ScrollArea>
 
-          <div className="p-4 border-t">
+          <div className="p-4 border-t space-y-3">
+            {/* Language Selector */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <Globe className="w-4 h-4" />
+                Language
+              </label>
+              <Select value={currentLanguage} onValueChange={setCurrentLanguage}>
+                <SelectTrigger className="w-full" data-testid="select-language">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {languageOptions.map((lang) => (
+                    <SelectItem key={lang.value} value={lang.value}>
+                      {lang.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Speech Settings */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <Volume2 className="w-4 h-4" />
+                  Text-to-Speech
+                </label>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSpeechEnabled(!speechEnabled)}
+                  data-testid="button-toggle-speech"
+                >
+                  {speechEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+                </Button>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Background Change */}
             <Button
               variant="outline"
               size="sm"
               className="w-full gap-2"
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => backgroundInputRef.current?.click()}
               data-testid="button-change-background"
             >
               <Settings className="w-4 h-4" />
@@ -312,21 +447,38 @@ export default function AIChat() {
                     <h3 className="text-lg font-medium mb-2 text-white">Start a conversation</h3>
                     <p className="text-white/80 mb-6">Ask me anything about careers, skills, or education.</p>
                     
-                    {/* Quick Actions */}
-                    <div className="grid grid-cols-2 gap-3 max-w-md mx-auto">
-                      {defaultQuickActions.map((action) => (
+                    {/* Enhanced Quick Actions */}
+                    <div className="grid grid-cols-2 gap-3 max-w-2xl mx-auto">
+                      {defaultQuickActions.slice(0, 6).map((action) => (
                         <Button
                           key={action.id}
                           variant="outline"
-                          className="gap-2 bg-white/10 border-white/20 text-white hover:bg-white/20"
+                          className="gap-2 bg-white/10 border-white/20 text-white hover:bg-white/20 text-sm"
                           onClick={() => handleQuickAction(action.label)}
                           data-testid={`button-quick-${action.id}`}
                         >
                           {action.icon}
-                          {action.label}
+                          <span className="truncate">{action.label}</span>
                         </Button>
                       ))}
                     </div>
+                    
+                    {/* Additional Quick Actions - Show More */}
+                    {defaultQuickActions.length > 6 && (
+                      <div className="mt-4">
+                        <Button
+                          variant="ghost"
+                          className="text-white/80 hover:text-white hover:bg-white/10"
+                          onClick={() => {
+                            const moreActions = defaultQuickActions.slice(6);
+                            setMessage(moreActions[Math.floor(Math.random() * moreActions.length)].label);
+                          }}
+                          data-testid="button-more-actions"
+                        >
+                          More options...
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   messages.map((msg) => (
@@ -343,15 +495,32 @@ export default function AIChat() {
                       )}
                       
                       <div
-                        className={`rounded-lg px-4 py-2 max-w-[80%] ${
+                        className={`rounded-lg px-4 py-2 max-w-[80%] relative group ${
                           msg.role === 'user'
                             ? 'bg-primary text-primary-foreground'
                             : 'bg-white/90 text-foreground'
                         }`}
                       >
                         <p className="whitespace-pre-wrap">{msg.content}</p>
-                        <div className="text-xs opacity-70 mt-1">
-                          {new Date(msg.timestamp).toLocaleTimeString()}
+                        <div className="flex items-center justify-between mt-1">
+                          <div className="text-xs opacity-70">
+                            {new Date(msg.timestamp).toLocaleTimeString()}
+                          </div>
+                          {msg.role === 'assistant' && speechEnabled && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0"
+                              onClick={() => isSpeaking ? stopSpeaking() : speakText(msg.content)}
+                              data-testid={`button-speak-${msg.id}`}
+                            >
+                              {isSpeaking ? (
+                                <VolumeX className="w-3 h-3" />
+                              ) : (
+                                <Volume2 className="w-3 h-3" />
+                              )}
+                            </Button>
+                          )}
                         </div>
                       </div>
                       
@@ -439,12 +608,19 @@ export default function AIChat() {
         </div>
       </div>
 
-      {/* Hidden file input for image uploads */}
+      {/* Hidden file inputs */}
       <input
         ref={fileInputRef}
         type="file"
         accept="image/*"
         onChange={handleImageUpload}
+        className="hidden"
+      />
+      <input
+        ref={backgroundInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleBackgroundChange}
         className="hidden"
       />
     </div>

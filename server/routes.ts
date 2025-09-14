@@ -183,10 +183,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get conversation history for context
       const previousMessages = await storage.getChatMessages(currentSessionId);
       
-      // Generate AI response
+      // Generate AI response with enhanced context
       const aiResponse = await openaiService.generateChatResponse(content, user, {
         currentPage: req.headers.referer?.includes('/ai-chat') ? 'ai-chat' : undefined,
-        previousMessages: previousMessages.slice(-10) // Last 10 messages for context
+        previousMessages: previousMessages.slice(-10), // Last 10 messages for context
+        language: req.body.language || 'en',
+        location: req.body.location || 'India'
       });
 
       // Save AI response

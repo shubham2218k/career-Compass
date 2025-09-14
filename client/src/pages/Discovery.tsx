@@ -123,8 +123,9 @@ export default function Discovery() {
     updateUser({ discoveryCompleted: true });
     // Clear saved progress since discovery is complete
     localStorage.removeItem('discoveryProgress');
-    console.log("Discovery completed! Redirecting to next step in roadmap...");
-    // In a real app, this would navigate to the next roadmap step
+    console.log("Discovery completed! Redirecting to recommendations...");
+    // Navigate to recommendations page
+    setLocation("/recommendations");
   };
 
   // Generate personality profile from answers

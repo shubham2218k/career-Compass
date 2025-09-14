@@ -9,6 +9,7 @@ import { AuthDialogProvider } from "@/contexts/AuthDialogContext";
 import AuthDialog from "@/components/AuthDialog";
 import Home from "@/pages/Home";
 import Discovery from "@/pages/Discovery";
+import Recommendations from "@/pages/Recommendations";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -16,6 +17,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/discovery" component={Discovery} />
+      <Route path="/recommendations" component={Recommendations} />
       <Route component={NotFound} />
     </Switch>
   );

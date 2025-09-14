@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Moon, Sun, Globe, Menu, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -16,13 +17,14 @@ export default function Navbar({ onThemeToggle, isDark, onNavigate }: NavbarProp
   const { openDialog } = useAuthDialog();
   const [language, setLanguage] = useState("EN");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [location] = useLocation();
 
   const navItems = [
-    { name: "Home", href: "#", active: true },
-    { name: "About", href: "#about" },
-    { name: "Library", href: "#library" },
-    { name: "AI Chat", href: "#chat" },
-    { name: "Roadmap", href: "#roadmap" },
+    { name: "Home", href: "/", active: location === "/" },
+    { name: "About", href: "#about", active: false },
+    { name: "Library", href: "#library", active: false },
+    { name: "AI Chat", href: "/ai-chat", active: location === "/ai-chat" },
+    { name: "Roadmap", href: "#roadmap", active: false },
   ];
 
   const toggleLanguage = () => {
@@ -58,18 +60,33 @@ export default function Navbar({ onThemeToggle, isDark, onNavigate }: NavbarProp
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             {navItems.map((item) => (
-              <a
-                key={item.name}
-                href={item.href}
-                className={`text-sm font-medium transition-colors hover:text-primary ${
-                  item.active
-                    ? "text-primary font-semibold border-b-2 border-primary pb-1"
-                    : "text-muted-foreground"
-                }`}
-                data-testid={`link-nav-${item.name.toLowerCase().replace(" ", "-")}`}
-              >
-                {item.name}
-              </a>
+              item.href.startsWith('/') ? (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`text-sm font-medium transition-colors hover:text-primary ${
+                    item.active
+                      ? "text-primary font-semibold border-b-2 border-primary pb-1"
+                      : "text-muted-foreground"
+                  }`}
+                  data-testid={`link-nav-${item.name.toLowerCase().replace(" ", "-")}`}
+                >
+                  {item.name}
+                </Link>
+              ) : (
+                <a
+                  key={item.name}
+                  href={item.href}
+                  className={`text-sm font-medium transition-colors hover:text-primary ${
+                    item.active
+                      ? "text-primary font-semibold border-b-2 border-primary pb-1"
+                      : "text-muted-foreground"
+                  }`}
+                  data-testid={`link-nav-${item.name.toLowerCase().replace(" ", "-")}`}
+                >
+                  {item.name}
+                </a>
+              )
             ))}
           </div>
 
@@ -144,17 +161,31 @@ export default function Navbar({ onThemeToggle, isDark, onNavigate }: NavbarProp
           <div className="md:hidden py-4 border-t">
             <div className="flex flex-col space-y-4">
               {navItems.map((item) => (
-                <a
-                  key={item.name}
-                  href={item.href}
-                  className={`text-sm font-medium transition-colors hover:text-primary ${
-                    item.active ? "text-primary font-semibold" : "text-muted-foreground"
-                  }`}
-                  data-testid={`link-mobile-${item.name.toLowerCase().replace(" ", "-")}`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  {item.name}
-                </a>
+                item.href.startsWith('/') ? (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={`text-sm font-medium transition-colors hover:text-primary ${
+                      item.active ? "text-primary font-semibold" : "text-muted-foreground"
+                    }`}
+                    data-testid={`link-mobile-${item.name.toLowerCase().replace(" ", "-")}`}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    {item.name}
+                  </Link>
+                ) : (
+                  <a
+                    key={item.name}
+                    href={item.href}
+                    className={`text-sm font-medium transition-colors hover:text-primary ${
+                      item.active ? "text-primary font-semibold" : "text-muted-foreground"
+                    }`}
+                    data-testid={`link-mobile-${item.name.toLowerCase().replace(" ", "-")}`}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    {item.name}
+                  </a>
+                )
               ))}
               
               <div className="flex items-center justify-between pt-4 border-t">
